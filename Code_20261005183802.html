@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>简单有趣的金融数学 · 第2章核心题</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --card-bg: #ffffff;
+    --text: #2c3e50;
+    --text-light: #5a6c7d;
+    --accent: #e67e22;
+    --accent-light: #fdf2e9;
+    --border: #e8e4de;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    padding: 24px 16px 60px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+    padding-bottom: 24px;
+    border-bottom: 2px dashed var(--border);
+  }
+  .header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .header .sub {
+    font-size: 0.88rem;
+    color: var(--text-light);
+  }
+  .intro {
+    background: linear-gradient(135deg, #fff8f0 0%, #fef5ec 100%);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 28px;
+    font-size: 0.9rem;
+    border: 1px solid #f0dcc8;
+  }
+  .intro strong { color: var(--accent); }
+  .problem-card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: box-shadow 0.2s;
+  }
+  .problem-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.09); }
+  .problem-header {
+    padding: 18px 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+    transition: background 0.2s;
+  }
+  .problem-header:hover { background: var(--accent-light); }
+  .problem-header .title {
+    font-size: 1rem;
+    font-weight: 700;
+  }
+  .problem-header .title .num {
+    color: var(--accent);
+    margin-right: 6px;
+  }
+  .problem-header .arrow {
+    font-size: 0.8rem;
+    color: var(--accent);
+    transition: transform 0.3s;
+    flex-shrink: 0;
+    margin-left: 12px;
+  }
+  .problem-card.open .problem-header .arrow { transform: rotate(180deg); }
+  .problem-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease;
+    background: #fcfcfa;
+  }
+  .problem-card.open .problem-body { max-height: 6000px; }
+  .problem-inner {
+    padding: 0 20px 20px;
+  }
+  .block {
+    margin-top: 16px;
+  }
+  .block-label {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .block-content {
+    font-size: 0.91rem;
+    color: var(--text);
+  }
+  .block-content p { margin-bottom: 6px; }
+  .block-content strong { color: #1a252f; }
+  .step {
+    background: #fff;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border-left: 3px solid var(--accent);
+    font-size: 0.89rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .step:hover { background: var(--accent-light); }
+  .step .step-title {
+    font-weight: 600;
+    color: #b35c00;
+    font-size: 0.84rem;
+    margin-bottom: 4px;
+  }
+  .step .step-detail {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    color: var(--text);
+  }
+  .step.open .step-detail { max-height: 800px; }
+  .step .step-detail p { margin-bottom: 6px; }
+  .concepts-used {
+    background: var(--accent-light);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-top: 16px;
+    font-size: 0.85rem;
+  }
+  .concepts-used .label {
+    font-weight: 700;
+    color: #8a4a00;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .concept-tag {
+    display: inline-block;
+    background: #fff;
+    border: 1px solid #f0dcc8;
+    border-radius: 20px;
+    padding: 3px 10px;
+    margin: 2px 4px 2px 0;
+    font-size: 0.8rem;
+    color: #8a4a00;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .concept-tag:hover { background: var(--accent-light); }
+  .concept-explain {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    font-size: 0.84rem;
+    color: var(--text-light);
+    padding: 0 4px;
+  }
+  .concept-explain.open { max-height: 600px; padding-top: 6px; }
+  .concept-explain p { margin-bottom: 4px; }
+  .payoff-diagram {
+    background: #fff;
+    border-radius: 8px;
+    padding: 14px;
+    margin: 10px 0;
+    font-family: "Courier New", monospace;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    overflow-x: auto;
+    border: 1px solid var(--border);
+  }
+  .footer {
+    text-align: center;
+    margin-top: 40px;
+    font-size: 0.8rem;
+    color: #b0aaa0;
+  }
+  @media (max-width: 480px) {
+    body { padding: 16px 12px 40px; }
+    .header h1 { font-size: 1.25rem; }
+    .problem-header .title { font-size: 0.92rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>第2章 核心题详解</h1>
+  <div class="sub">简单有趣的金融数学 · 习题陪读版</div>
+</div>
+
+<div class="intro">
+  <strong>这一组包含：</strong>题4、题5、题6、题10。<br>
+  题4是画10个投资组合的收益图，题5是比较跨式组合，题6是逆向构造，题10是完整套利操作。<br>
+  这一组做完，第2章就彻底通了。
+</div>
+
+<!-- ========== 题4 ========== -->
+<div class="problem-card" onclick="toggleProblem(this)">
+  <div class="problem-header">
+    <span class="title"><span class="num">题4</span>十种投资组合的利润曲线</span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="problem-body"><div class="problem-inner">
+
+    <div class="block">
+      <div class="block-label">题目</div>
+      <div class="block-content">
+        <p>下面是几个投资组合，每一个都用术语Port来表示。画出每个人在t=T时的利润曲线。确定每个投资组合的优势和劣势，即解释一个理智的投资者对每种投资组合的期望是什么。</p>
+        <p>在这里，C_E表示行权价E的看涨期权，-C_E表示卖出看涨期权，P_E表示看跌期权，-P_E表示卖出看跌期权。</p>
+        <p>(a) "买入看涨期权"是Port=C_E。<br>(b) "卖出看涨期权"是Port=-C_E。<br>(c) "买入看跌期权"是Port=P_E。<br>(d) "卖出看跌期权"是Port=-P_E。<br>(e) "买入跨式"是Port=P_E+C_E，即以相同执行价格同时买入看涨和看跌期权。<br>(f) "卖出跨式"是Port=-P_E-C_E。<br>(g) "买入异价跨式"是Port=P_E1+C_E2，即以执行价格E1买入看跌期权，以执行价格E2买入看涨期权。<br>(h) "卖出蝶式"是Port=-C_E1+2C_E2-C_E3，其中E1&lt;E2&lt;E3。<br>(i) "买入蝶式"是Port=C_E1-2C_E2+C_E3，其中E1&lt;E2&lt;E3。<br>(j) "卖出鹰式"是Port=-C_E1+C_E2+C_E3-C_E4，其中E1&lt;E2&lt;E3&lt;E4。<br>(k) "买入鹰式"是Port=C_E1-C_E2-C_E3+C_E4。</p>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-label">解题步骤</div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第1步：画图前的准备</div>
+        <div class="step-detail">
+          <p>横轴是到期日股价S_T，纵轴是利润。</p>
+          <p>看涨收益：max(S_T - E, 0)</p>
+          <p>看跌收益：max(E - S_T, 0)</p>
+          <p>卖出就是取负号。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">(a) 买入看涨 C_E</div>
+        <div class="step-detail">
+          <p>S_T &lt; E：不行权，收益0，亏权利金c。</p>
+          <p>S_T &gt; E：行权，收益S_T - E - c。</p>
+          <p>形状：在E处拐折，右边斜率为+1。亏损有限（权利金），盈利无限。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">(b) 卖出看涨 -C_E</div>
+        <div class="step-detail">
+          <p>买入看涨的反面。</p>
+          <p>S_T &lt; E：赚权利金c。</p>
+          <p>S_T &gt; E：亏 S_T - E - c。</p>
+          <p>形状：在E处拐折，右边斜率为-1。盈利有限（权利金），亏损无限。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">(c) 买入看跌 P_E</div>
+        <div class="step-detail">
+          <p>S_T &gt; E：不行权，收益0，亏权利金p。</p>
+          <p>S_T &lt; E：行权，收益E - S_T - p。</p>
+          <p>形状：在E处拐折，左边斜率为-1。亏损有限，盈利有上限（最多E-p）。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">(d) 卖出看跌 -P_E</div>
+        <div class="step-detail">
+          <p>买入看跌的反面。</p>
+          <p>S_T &gt; E：赚权利金p。</p>
+          <p>S_T &lt; E：亏 E - S_T - p。</p>
+          <p>形状：盈利有限，亏损有上限（最多E-p）。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">(e) 买入跨式 P_E + C_E</div>
+        <div class="step-detail">
+          <p>同时买入相同执行价的看涨和看跌。</p>
+          <p>S_T ≈ E：两个都不行权，亏两份权利金。</p>
+          <p>S_T 远离E（大涨或大跌）：一边赚翻，覆盖另一边。</p>
+          <p>形状：一个V形，底部在E处。赌的是"大波动"。</p>
+          <p><strong>优势：</strong>涨跌都能赚。<strong>劣势：</strong>如果股价不动，两份权利金都亏掉。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">(f) 卖出跨式 -P_E - C_E</div>
+        <div class="step-detail">
+          <p>买入跨式的反面。</p>
+          <p>S_T ≈ E：赚两份权利金。</p>
+          <p>S_T 远离E：一边亏翻。</p>
+          <p>形状：一个倒V形，顶部在E处。赌的是"股价不动"。</p>
+          <p><strong>优势：</strong>股价不动就赚。<strong>劣势：</strong>大波动会巨亏。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">(g) 买入异价跨式 P_E1 + C_E2</div>
+        <div class="step-detail">
+          <p>看跌执行价E1，看涨执行价E2，通常E1 &lt; E2。</p>
+          <p>S_T 在E1和E2之间：两个都不行权，亏两份权利金。</p>
+          <p>S_T 低于E1：看跌行权。</p>
+          <p>S_T 高于E2：看涨行权。</p>
+          <p>形状：一个较宽的V形，底部在E1和E2之间。比(e)的V更宽。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">(h) 卖出蝶式 -C_E1 + 2C_E2 - C_E3</div>
+        <div class="step-detail">
+          <p>卖一个E1的看涨，买两个E2的看涨，卖一个E3的看涨。</p>
+          <p>形状：一个小的"尖顶"，在E2处利润最大。</p>
+          <p>赌的是股价停在E2附近。收益有限，风险有限。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">(i) 买入蝶式 C_E1 - 2C_E2 + C_E3</div>
+        <div class="step-detail">
+          <p>卖出蝶式的反面。</p>
+          <p>形状：一个小的"尖底"，在E2处亏损最大，两边赚。</p>
+          <p>赌的是股价远离E2。风险有限，收益有限。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">(j)(k) 鹰式</div>
+        <div class="step-detail">
+          <p>鹰式是蝶式的扩展，用四个执行价。</p>
+          <p>卖出鹰式：在E2到E3之间利润最大，是一个平台。</p>
+          <p>买入鹰式：反过来，在中间亏损最大。</p>
+          <p>形状比蝶式更平缓，适合预期股价在某个区间内波动。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第2步：总结各类组合的优缺点</div>
+        <div class="step-detail">
+          <p><strong>单边买期权（a、c）：</strong>亏损有限，盈利可能很大。适合有明确方向判断的人。</p>
+          <p><strong>单边卖期权（b、d）：</strong>盈利有限，亏损可能很大。适合想收权利金、愿承担风险的人。</p>
+          <p><strong>跨式（e、f）：</strong>赌波动。买入跨式赌大动，卖出跨式赌不动。</p>
+          <p><strong>蝶式/鹰式（h、i、j、k）：</strong>赌股价在某个区间。收益和风险都有限，适合精细判断。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="concepts-used">
+      <span class="label">涉及的概念（点击查看）：</span>
+      <span class="concept-tag" onclick="toggleConcept(event, this)">收益图</span>
+      <div class="concept-explain">
+        <p>横轴S_T，纵轴利润。画出来能一眼看出策略的盈亏结构。</p>
+      </div>
+      <span class="concept-tag" onclick="toggleConcept(event, this)">跨式组合</span>
+      <div class="concept-explain">
+        <p>同时买/卖看涨和看跌。买入跨式赌大波动，卖出跨式赌不动。</p>
+      </div>
+      <span class="concept-tag" onclick="toggleConcept(event, this)">蝶式/鹰式</span>
+      <div class="concept-explain">
+        <p>用多个不同执行价的期权组合，赌股价停在某个区间。收益和风险都有限。</p>
+      </div>
+      <span class="concept-tag" onclick="toggleConcept(event, this)">权利金</span>
+      <div class="concept-explain">
+        <p>买期权要付权利金，卖期权收权利金。这是所有组合成本/收益的起点。</p>
+      </div>
+    </div>
+
+  </div></div>
+</div>
+
+<!-- ========== 题5 ========== -->
+<div class="problem-card" onclick="toggleProblem(this)">
+  <div class="problem-header">
+    <span class="title"><span class="num">题5</span>比较买入跨式和买入异价跨式</span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="problem-body"><div class="problem-inner">
+
+    <div class="block">
+      <div class="block-label">题目</div>
+      <div class="block-content">
+        <p>比较买入跨式组合和买入异价跨式组合的收益情况，并解释各自的优势。</p>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-label">解题步骤</div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第1步：回顾两个组合的定义</div>
+        <div class="step-detail">
+          <p><strong>买入跨式：</strong>P_E + C_E，执行价相同。</p>
+          <p><strong>买入异价跨式：</strong>P_E1 + C_E2，执行价不同（E1 &lt; E2）。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第2步：对比收益结构</div>
+        <div class="step-detail">
+          <p><strong>跨式：</strong>V形，底部是一个点（E）。股价必须远离E才能赚钱。</p>
+          <p><strong>异价跨式：</strong>V形更宽，底部是一个区间（E1到E2）。股价只要在这个区间外就行。</p>
+          <p><strong>成本对比：</strong>异价跨式的权利金通常更低，因为看涨执行价更高（看涨更便宜），看跌执行价更低（看跌更便宜）。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第3步：各自的优势</div>
+        <div class="step-detail">
+          <p><strong>跨式优势：</strong>只要股价有任何大的波动，就能赚钱。适合预期"一定会大动，但不知道方向"的情况。</p>
+          <p><strong>异价跨式优势：</strong>成本更低，容忍度更高。股价只要不在E1到E2之间就行，不需要剧烈波动。适合预期"股价会温和偏离"的情况。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="concepts-used">
+      <span class="label">涉及的概念（点击查看）：</span>
+      <span class="concept-tag" onclick="toggleConcept(event, this)">跨式 vs 异价跨式</span>
+      <div class="concept-explain">
+        <p>跨式：同一执行价。异价跨式：不同执行价。</p>
+        <p>异价跨式成本更低，但盈利门槛也更低。</p>
+      </div>
+      <span class="concept-tag" onclick="toggleConcept(event, this)">波动率交易</span>
+      <div class="concept-explain">
+        <p>买入跨式/异价跨式，本质上都是"做多波动率"。赌的是股价会动。</p>
+      </div>
+    </div>
+
+  </div></div>
+</div>
+
+<!-- ========== 题6 ========== -->
+<div class="problem-card" onclick="toggleProblem(this)">
+  <div class="problem-header">
+    <span class="title"><span class="num">题6</span>逆向构造投资组合</span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="problem-body"><div class="problem-inner">
+
+    <div class="block">
+      <div class="block-label">题目</div>
+      <div class="block-content">
+        <p>这是关于投资组合的另一个问题。根据给定的利润曲线形状，设计投资组合。</p>
+        <p>(a) 构造一个投资组合，在t=T时刻，利润线是水平的，直到价格为60美元。在60美元这一点，利润曲线的斜率是3，直到70美元。在70美元这一点，利润曲线的斜率为2，直到价格为100美元。接下来，利润曲线的斜率为0，直到价格为110美元。然后利润曲线的斜率为-1，直到120美元。在那之后，利润曲线变得水平。</p>
+        <p>(b) 只使用看跌期权构造一个具有上述特征的投资组合。</p>
+        <p>(c) 同时使用看涨期权和看跌期权构造一个具有上述特征的投资组合。</p>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-label">解题步骤</div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第1步：理解斜率的变化</div>
+        <div class="step-detail">
+          <p>利润曲线的斜率，就是投资组合的Delta。</p>
+          <p>每当斜率变化，就意味着有一个期权在某个执行价处开始生效。</p>
+          <p>斜率变化点：60、70、100、110、120。</p>
+          <p>斜率变化量：</p>
+          <p>60处：从0变到3 → +3</p>
+          <p>70处：从3变到2 → -1</p>
+          <p>100处：从2变到0 → -2</p>
+          <p>110处：从0变到-1 → -1</p>
+          <p>120处：从-1变到0 → +1</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第2步：斜率变化对应什么期权</div>
+        <div class="step-detail">
+          <p>看涨期权在行权价处，斜率+1。</p>
+          <p>看跌期权在行权价处，斜率-1。</p>
+          <p>斜率变化量+3 = 买入3份看涨（在60处）。</p>
+          <p>斜率变化量-1 = 卖出1份看涨（在70处），或者买入1份看跌。</p>
+          <p>斜率变化量-2 = 卖出2份看涨（在100处），或者买入2份看跌。</p>
+          <p>斜率变化量-1 = 卖出1份看涨（在110处），或者买入1份看跌。</p>
+          <p>斜率变化量+1 = 买入1份看涨（在120处），或者卖出1份看跌。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第3步：用看涨期权构造（a）</div>
+        <div class="step-detail">
+          <p>用看涨期权：</p>
+          <p>60处+3：买入3份C_60</p>
+          <p>70处-1：卖出1份C_70</p>
+          <p>100处-2：卖出2份C_100</p>
+          <p>110处-1：卖出1份C_110</p>
+          <p>120处+1：买入1份C_120</p>
+          <p>组合：Port = 3C_60 - C_70 - 2C_100 - C_110 + C_120</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第4步：用看跌期权构造（b）</div>
+        <div class="step-detail">
+          <p>用看跌期权，斜率变化方向相反：</p>
+          <p>60处+3：卖出3份P_60</p>
+          <p>70处-1：买入1份P_70</p>
+          <p>100处-2：买入2份P_100</p>
+          <p>110处-1：买入1份P_110</p>
+          <p>120处+1：卖出1份P_120</p>
+          <p>组合：Port = -3P_60 + P_70 + 2P_100 + P_110 - P_120</p>
+          <p>（注意：这个组合和上面的看涨组合在到期日收益相同，因为看跌和看涨可以通过标的资产互相转换。）</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第5步：同时用看涨和看跌（c）</div>
+        <div class="step-detail">
+          <p>可以自由选择每个拐点用看涨还是看跌。</p>
+          <p>例如：</p>
+          <p>60处+3：买入3份C_60</p>
+          <p>70处-1：买入1份P_70（等价于卖出1份C_70加上标的调整）</p>
+          <p>100处-2：买入2份P_100</p>
+          <p>110处-1：买入1份P_110</p>
+          <p>120处+1：卖出1份P_120</p>
+          <p>组合：Port = 3C_60 + P_70 + 2P_100 + P_110 - P_120</p>
+          <p>（需要调整标的资产头寸，使整体斜率匹配。）</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="concepts-used">
+      <span class="label">涉及的概念（点击查看）：</span>
+      <span class="concept-tag" onclick="toggleConcept(event, this)">斜率与Delta</span>
+      <div class="concept-explain">
+        <p>利润曲线的斜率，就是组合的Delta。斜率变化点 = 期权的执行价。</p>
+      </div>
+      <span class="concept-tag" onclick="toggleConcept(event, this)">逆向构造</span>
+      <div class="concept-explain">
+        <p>给你利润曲线，倒推需要哪些期权。核心是看每个拐点处斜率变化了多少。</p>
+      </div>
+      <span class="concept-tag" onclick="toggleConcept(event, this)">看涨/看跌的等价性</span>
+      <div class="concept-explain">
+        <p>看涨和看跌可以通过"标的资产 + 债券"互相转换。所以同一个收益曲线，可以用不同方式构造。</p>
+      </div>
+    </div>
+
+  </div></div>
+</div>
+
+<!-- ========== 题10 ========== -->
+<div class="problem-card" onclick="toggleProblem(this)">
+  <div class="problem-header">
+    <span class="title"><span class="num">题10</span>完整套利操作</span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="problem-body"><div class="problem-inner">
+
+    <div class="block">
+      <div class="block-label">题目</div>
+      <div class="block-content">
+        <p>假设目前，S=99美元，r=0.02，C_100(99,T-1/2) - P_100(99,T-1/2) = 8美元且T=t+1/2年。</p>
+        <p>(a) 判断目前有没有套利机会？如果有，应该如何操作？能获利多少？</p>
+        <p>(b) 虽然在未来的6个月中，任何情况都有可能会发生，不过我们至少可以保证在到期日时你的资金安全。请列出所有可能的情况，说说你是如何保证清偿债务并实现获利的。</p>
+      </div>
+    </div>
+
+    <div class="block">
+      <div class="block-label">解题步骤</div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第1步：写出平价关系式</div>
+        <div class="step-detail">
+          <p>C - P = S - E × e^(-r(T-t))</p>
+          <p>已知：S=99，E=100，r=0.02，T-t=0.5年。</p>
+          <p>右边 = 99 - 100 × e^(-0.02×0.5) = 99 - 100 × e^(-0.01)</p>
+          <p>e^(-0.01) ≈ 0.99005</p>
+          <p>右边 = 99 - 99.005 = <strong>-0.005</strong></p>
+          <p>左边 = 8（题目给的C-P值）。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第2步：发现套利机会（a）</div>
+        <div class="step-detail">
+          <p>左边8，右边-0.005。左边 &gt; 右边。</p>
+          <p>说明C-P被高估了，即C太贵，或者P太便宜。</p>
+          <p>套利方向：卖出C，买入P，卖空股票，存钱。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第3步：构造套利组合</div>
+        <div class="step-detail">
+          <p>1. 卖出看涨期权 C_100：收C</p>
+          <p>2. 买入看跌期权 P_100：付P</p>
+          <p>3. 卖空股票：收99</p>
+          <p>4. 存入银行：存 99 + C - P = 99 + 8 = 107（因为C-P=8）</p>
+          <p>初始现金流：-C + P + 99 - 107 = -C + P + 99 - (99 + C - P) = 0。完美。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第4步：到期日分析（b）</div>
+        <div class="step-detail">
+          <p>半年后，存款变为：107 × e^(0.02×0.5) = 107 × e^0.01 ≈ 107 × 1.01005 ≈ <strong>108.08</strong></p>
+          <p>到期日，看涨和看跌组合的收益：</p>
+          <p>如果S_T &gt; 100：看涨被行权，你按100卖出股票，得100。看跌归零。</p>
+          <p>如果S_T &lt; 100：看跌行权，你按100买入股票，得100。看涨归零。</p>
+          <p>无论哪种情况，你都能用100美元平掉股票空头。</p>
+          <p>净赚 = 108.08 - 100 = <strong>8.08美元</strong>。</p>
+        </div>
+      </div>
+      <div class="step" onclick="toggleStep(event, this)">
+        <div class="step-title">第5步：验证资金安全</div>
+        <div class="step-detail">
+          <p>无论股价涨到多少还是跌到多少，你在到期日的净收益都是8.08美元。</p>
+          <p>因为看涨和看跌的组合，保证了你能按100美元买入/卖出股票。</p>
+          <p>银行存款108.08，足够支付100美元的股票平仓成本。</p>
+          <p><strong>这就是无风险套利。</strong></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="concepts-used">
+      <span class="label">涉及的概念（点击查看）：</span>
+      <span class="concept-tag" onclick="toggleConcept(event, this)">套利</span>
+      <div class="concept-explain">
+        <p>平价关系式被打破时，通过买卖组合锁定无风险利润。</p>
+      </div>
+      <span class="concept-tag" onclick="toggleConcept(event, this)">卖空股票</span>
+      <div class="concept-explain">
+        <p>借股票卖出，到期时买回还回去。这里用来构造套利组合。</p>
+      </div>
+      <span class="concept-tag" onclick="toggleConcept(event, this)">资金安全</span>
+      <div class="concept-explain">
+        <p>通过组合，无论股价怎么变，到期都能清偿债务。这就是"无风险"的含义。</p>
+      </div>
+      <span class="concept-tag" onclick="toggleConcept(event, this)">平价关系式</span>
+      <div class="concept-explain">
+        <p>C - P = S - E·e^(-rT)。这是判断套利机会的核心工具。</p>
+      </div>
+    </div>
+
+  </div></div>
+</div>
+
+<!-- 小结 -->
+<div class="problem-card" onclick="toggleProblem(this)">
+  <div class="problem-header">
+    <span class="title">📌 核心题小结</span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="problem-body"><div class="problem-inner">
+    <div class="block">
+      <div class="block-label">这四道题教会你什么</div>
+      <div class="block-content">
+        <p><strong>题4：</strong>十种投资组合的收益图。做完这一道，你对所有基本策略的形状就全清楚了。</p>
+        <p><strong>题5：</strong>跨式 vs 异价跨式。一个赌大动，一个成本更低、门槛更低。</p>
+        <p><strong>题6：</strong>逆向构造。给你利润曲线，倒推期权组合。核心是看斜率变化。</p>
+        <p><strong>题10：</strong>完整套利操作。发现平价关系式偏离，构造组合，锁定无风险利润。</p>
+        <p><strong>核心思想：</strong></p>
+        <p>期权价格不是随便定的，它们之间必须满足平价关系式。一旦偏离，套利者就会冲进去，把价格拉回来。</p>
+        <p>这就是"无套利"的力量，也是第2章的灵魂。</p>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<div class="footer">
+  简单有趣的金融数学 · 第2章核心题 · 第2章习题全部完成
+</div>
+
+<script>
+function toggleProblem(el) {
+  el.classList.toggle('open');
+}
+function toggleStep(event, el) {
+  event.stopPropagation();
+  el.classList.toggle('open');
+}
+function toggleConcept(event, el) {
+  event.stopPropagation();
+  var explain = el.nextElementSibling;
+  if (explain && explain.classList.contains('concept-explain')) {
+    explain.classList.toggle('open');
+  }
+}
+</script>
+</body>
+</html>
