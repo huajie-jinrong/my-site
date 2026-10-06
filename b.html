@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>简单有趣的金融数学 · 第1章 打赌游戏（互动版）</title>
+<style>
+  :root {
+    --bg: #faf9f6;
+    --card-bg: #ffffff;
+    --text: #2c3e50;
+    --text-light: #5a6c7d;
+    --accent: #e67e22;
+    --accent-light: #fdf2e9;
+    --border: #e8e4de;
+    --shadow: 0 2px 12px rgba(0,0,0,0.06);
+    --radius: 14px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    padding: 0 0 60px;
+    max-width: 760px;
+    margin: 0 auto;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ===== 进度条 ===== */
+  .progress-bar {
+    position: fixed; top: 0; left: 0;
+    height: 3px; width: 0%;
+    background: linear-gradient(90deg, var(--accent), #f1c40f);
+    z-index: 999;
+  }
+
+  /* ===== 头部 ===== */
+  .header {
+    text-align: center;
+    padding: 34px 20px 26px;
+    background: linear-gradient(160deg, #fff8f2 0%, #faf9f6 100%);
+    border-bottom: 2px dashed var(--border);
+    margin-bottom: 8px;
+  }
+  .header h1 { font-size: 1.55rem; font-weight: 800; letter-spacing: 1px; margin-bottom: 8px; }
+  .header .sub { font-size: 0.88rem; color: var(--text-light); }
+  .header .hint {
+    display: inline-block; margin-top: 14px; font-size: 0.8rem;
+    color: var(--accent); background: var(--accent-light);
+    padding: 6px 14px; border-radius: 20px;
+  }
+
+  /* ===== 工具栏 ===== */
+  .toolbar {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+    padding: 10px;
+    background: rgba(250,249,246,0.94);
+    backdrop-filter: blur(6px);
+    border-bottom: 1px solid var(--border);
+  }
+  .toolbar button {
+    font-size: 0.82rem; padding: 6px 15px;
+    border: 1px solid var(--border); background: #fff; color: var(--text);
+    border-radius: 20px; cursor: pointer; transition: all 0.2s;
+  }
+  .toolbar button:hover, .toolbar button:active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* ===== 章节标题 ===== */
+  .section-title {
+    font-size: 1.02rem; font-weight: 700; color: var(--accent);
+    margin: 30px 16px 10px; padding-left: 10px;
+    border-left: 4px solid var(--accent);
+  }
+
+  /* ===== 概念卡（第一层）===== */
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin: 0 12px 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: box-shadow 0.2s, border-color 0.2s;
+  }
+  .card:hover { box-shadow: 0 6px 22px rgba(0,0,0,0.1); }
+  .card.open { border-color: var(--accent); }
+  .card-header {
+    padding: 16px 18px; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    user-select: none; transition: background 0.2s;
+  }
+  .card-header:active { background: var(--accent-light); }
+  .card-header .title { font-size: 1rem; font-weight: 600; }
+  .card-header .en { font-size: 0.8rem; color: var(--text-light); font-weight: 400; margin-left: 4px; }
+  .card-header .arrow { font-size: 0.72rem; color: var(--accent); transition: transform 0.35s; flex-shrink: 0; margin-left: 12px; }
+  .card.open .card-header .arrow { transform: rotate(180deg); }
+  .card-preview {
+    max-height: 0; overflow: hidden; transition: max-height 0.4s ease;
+    background: #fcfcfa;
+  }
+  .card.open .card-preview { max-height: 4000px; }
+  .preview-inner { padding: 4px 18px 16px; }
+
+  /* ===== 标签条（第二层）===== */
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; padding: 6px 0 12px; }
+  .tab {
+    font-size: 0.82rem; padding: 7px 15px; border-radius: 20px; cursor: pointer;
+    border: 1px solid var(--border); background: #fff; color: var(--text-light);
+    transition: all 0.2s; user-select: none;
+  }
+  .tab:hover { border-color: var(--accent); color: var(--accent); }
+  .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; }
+
+  /* ===== 内容面板 ===== */
+  .panels { position: relative; }
+  .panel {
+    display: none;
+    font-size: 0.93rem; color: var(--text);
+    background: #fff; border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 16px;
+    animation: fadeIn 0.25s ease;
+  }
+  .panel.show { display: block; }
+  .panel p { margin-bottom: 8px; }
+  .panel p:last-child { margin-bottom: 0; }
+  .panel strong { color: #1a252f; }
+  .panel .formula {
+    background: var(--accent-light); border-radius: 8px;
+    padding: 10px 12px; margin: 10px 0; font-size: 0.9rem;
+    color: #a0520a; text-align: center; font-weight: 600;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* ===== 小结 ===== */
+  .summary-card {
+    background: linear-gradient(135deg, #fff8f0 0%, #fef5ec 100%);
+    border: 2px solid var(--accent); border-radius: var(--radius);
+    padding: 22px 20px; margin: 36px 12px 0;
+    box-shadow: 0 4px 16px rgba(230,126,34,0.12);
+  }
+  .summary-card h3 { font-size: 1.1rem; color: var(--accent); margin-bottom: 12px; }
+  .summary-card p { font-size: 0.94rem; margin-bottom: 10px; }
+  .summary-card .key-point {
+    background: rgba(255,255,255,0.75); border-radius: 8px;
+    padding: 12px 14px; margin-top: 12px;
+    font-weight: 600; color: #b35c00; font-size: 0.96rem;
+  }
+
+  .footer { text-align: center; margin-top: 36px; font-size: 0.8rem; color: #b0aaa0; padding: 0 16px; }
+
+  @media (max-width: 480px) {
+    body { padding-bottom: 40px; }
+    .header h1 { font-size: 1.3rem; }
+    .card-header .title { font-size: 0.92rem; }
+    .section-title { margin-left: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progressBar"></div>
+
+<div class="header">
+  <h1>第1章 引子：打赌游戏</h1>
+  <div class="sub">简单有趣的金融数学 · 互动陪读版</div>
+  <div class="hint">👆 点概念展开 → 再点标签看内容</div>
+</div>
+
+<div class="toolbar">
+  <button onclick="expandAll()">全部展开</button>
+  <button onclick="collapseAll()">全部收起</button>
+  <button onclick="resetAll()">重置</button>
+</div>
+
+<!-- ================= 1.1 橄榄球比赛 ================= -->
+<div class="section-title">1.1 橄榄球比赛</div>
+
+<!-- 1.1.1 消除不确定性 -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="title">消除不确定性 <span class="en">Eliminating Uncertainty</span></span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="card-preview"><div class="preview-inner">
+    <div class="tabs">
+      <span class="tab active" data-p="p1">📖 书里意思</span>
+      <span class="tab" data-p="p2">💬 人话解释</span>
+      <span class="tab" data-p="p3">🏠 生活例子</span>
+      <span class="tab" data-p="p4">📈 金融例子</span>
+    </div>
+    <div class="panels">
+      <div class="panel show" id="p1"><p>你面对一个赌局，不知道谁会赢，但你可以通过两边都下注，把"输赢"这个不确定的事，变成"无论谁赢，我都固定拿一笔钱"。</p></div>
+      <div class="panel" id="p2"><p>不确定性就是"你不知道结果"。消除不确定性就是：<strong>你不赌结果，你赌"无论结果怎样，我都不会亏"。</strong></p></div>
+      <div class="panel" id="p3">
+        <p>你和朋友赌明天会不会下雨。你赌"下雨"100块，赔率1赔2。但你心里没底，又找另一个人赌"不下雨"100块，赔率也是1赔2。</p>
+        <p>下雨：你赢200，输掉另一个100，净赚100。<br>不下雨：你赢另一个200，输掉第一个100，净赚100。</p>
+        <p><strong>不管下不下雨，你都赚100。</strong></p>
+      </div>
+      <div class="panel" id="p4">
+        <p>你持有100万股票，担心下周暴跌。你可以买入"看跌期权"（Put Option），花2万块锁定一个"最低卖出价"。</p>
+        <p>如果股票暴跌：期权赔付你，弥补股票亏损。<br>如果股票大涨：你只亏了2万权利金，股票照赚。</p>
+        <p><strong>你放弃了"暴跌时毫发无伤"的可能，换来了"无论涨跌，心里有底"。</strong></p>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- 1.1.3 + 1.1.4 收益曲线与固定收益 -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="title">收益曲线与固定收益 <span class="en">Payoff Curve &amp; Fixed Payoff</span></span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="card-preview"><div class="preview-inner">
+    <div class="tabs">
+      <span class="tab active" data-p="q1">📖 书里意思</span>
+      <span class="tab" data-p="q2">💬 人话解释</span>
+      <span class="tab" data-p="q3">🏠 生活例子</span>
+      <span class="tab" data-p="q4">📈 金融例子</span>
+    </div>
+    <div class="panels">
+      <div class="panel show" id="q1"><p>收益曲线是画出来的图：横轴是结果（比如比赛谁赢），纵轴是你能拿多少钱。固定收益就是不管结果怎么变，你的收益是一条水平线。</p></div>
+      <div class="panel" id="q2">
+        <p><strong>收益曲线</strong>：把"不同结果下你赚多少"画成一条线。</p>
+        <p><strong>固定收益</strong>：这条线是平的，说明你锁定了一个确定的结果，不管外面怎么变。</p>
+      </div>
+      <div class="panel" id="q3">
+        <p>你去餐厅打工。</p>
+        <p>如果按小时算工资，客人多你也不多赚，客人少你也不少赚——<strong>这就是固定收益</strong>，收益曲线是一条水平线。</p>
+        <p>如果按提成算，客人多你赚得多，客人少你赚得少——<strong>这就是浮动收益</strong>，收益曲线是斜的。</p>
+      </div>
+      <div class="panel" id="q4">
+        <p>你买了一张国债，票面利率3%，持有到期。</p>
+        <p>不管市场利率怎么变、股市怎么涨跌，你到期拿到的钱就是本金+3%利息。</p>
+        <p><strong>这就是固定收益。</strong>在债券市场里，"固定收益"（Fixed Income）这个词本身就是指债券这类产品。</p>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- 1.1.5 套利 -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="title">套利 <span class="en">Arbitrage</span></span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="card-preview"><div class="preview-inner">
+    <div class="tabs">
+      <span class="tab active" data-p="r1">📖 书里意思</span>
+      <span class="tab" data-p="r2">💬 人话解释</span>
+      <span class="tab" data-p="r3">🏠 生活例子</span>
+      <span class="tab" data-p="r4">📈 金融例子</span>
+    </div>
+    <div class="panels">
+      <div class="panel show" id="r1"><p>同一个东西，在两个地方卖不同的价格。你在便宜的地方买，在贵的地方卖，中间差价就是白赚的。这种"没有风险、不需要本金、稳赚"的机会就叫套利。</p></div>
+      <div class="panel" id="r2"><p><strong>套利就是"搬砖"。</strong>同一块砖，A市场卖3块，B市场卖5块。你从A买，拿去B卖，净赚2块。不需要预测未来，不需要承担风险。</p></div>
+      <div class="panel" id="r3"><p>你发现楼下便利店一瓶可乐卖3块，隔壁超市卖2块5。你花2块5买一瓶，跑到便利店门口卖3块。只要有人买，你就赚5毛。<br><strong>这就是最原始的套利。</strong></p></div>
+      <div class="panel" id="r4">
+        <p><strong>日元套息交易（Yen Carry Trade）</strong>：日本长期零利率，你借日元几乎不要利息。把日元换成美元，买美国国债（利率5%）。</p>
+        <p>你借1400万日元，利息成本1.4万；换成10万美元买美债，一年后拿10.5万美元，换回日元净赚68.6万。</p>
+        <p><strong>利差就是你的套利利润。</strong>但风险是：如果日元突然升值，你还债成本暴增，利润全被吃掉。</p>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- 1.1.6 无套利对冲 -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="title">无套利对冲 <span class="en">No-Arbitrage Hedging</span></span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="card-preview"><div class="preview-inner">
+    <div class="tabs">
+      <span class="tab active" data-p="s1">📖 书里意思</span>
+      <span class="tab" data-p="s2">💬 人话解释</span>
+      <span class="tab" data-p="s3">🏠 生活例子</span>
+      <span class="tab" data-p="s4">📈 金融例子</span>
+    </div>
+    <div class="panels">
+      <div class="panel show" id="s1"><p>如果市场是"正常"的，那就不应该存在白捡钱的机会。你之所以能通过对冲锁定收益，本质上是因为你利用了两个市场之间的价格差异。一旦这个差异消失，对冲的利润也就消失了。</p></div>
+      <div class="panel" id="s2">
+        <p><strong>无套利的意思就是："世界上没有免费的午餐。"</strong></p>
+        <p>如果一个策略真的能稳赚不赔，那所有人都会去做，然后这个机会就消失了。所以金融定价的核心逻辑是：<strong>假设不存在套利机会，来反推一个东西应该值多少钱。</strong></p>
+      </div>
+      <div class="panel" id="s3">
+        <p>你发现A店可乐2块5，B店可乐3块。你套利赚5毛。但很快别人也发现了，都去A店买，A店涨价到2块9；都去B店卖，B店降价到2块8。差价从5毛缩到1毛，套利空间快没了。</p>
+        <p><strong>这就是"无套利"在起作用。</strong></p>
+      </div>
+      <div class="panel" id="s4">
+        <p><strong>美债基差交易（Treasury Basis Trade）</strong>：对冲基金发现国债现货和期货之间有微小价差，于是买入现货、卖空期货，等价格收敛赚差价。</p>
+        <p>单倍收益只有0.1%~0.5%，所以上20~50倍杠杆。规模高达8300亿美元。</p>
+        <p><strong>你赚的不是方向，是偏差。一旦偏差扩大或资金链断裂，"无风险"就变成灾难。</strong></p>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ================= 1.2 期望值和方差 ================= -->
+<div class="section-title">1.2 期望值和方差</div>
+
+<!-- 1.2.3 期望值 -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="title">期望值 <span class="en">Expected Value</span></span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="card-preview"><div class="preview-inner">
+    <div class="tabs">
+      <span class="tab active" data-p="t1">📖 书里意思</span>
+      <span class="tab" data-p="t2">💬 人话解释</span>
+      <span class="tab" data-p="t3">🏠 生活例子</span>
+      <span class="tab" data-p="t4">📈 金融例子</span>
+    </div>
+    <div class="panels">
+      <div class="panel show" id="t1"><p>一个随机事件所有可能结果的加权平均。比如掷骰子，可能结果是1到6，每个概率1/6，期望值就是3.5。</p></div>
+      <div class="panel" id="t2"><p><strong>期望值就是"长期来看，平均每次你能拿到多少"。</strong>它不是某一次的结果，而是你重复很多次之后的平均。</p></div>
+      <div class="panel" id="t3">
+        <p>你买彩票，花2块，中奖概率1/100万，奖金100万。</p>
+        <div class="formula">期望值 = 100万 × (1/100万) = 1 块</div>
+        <p>也就是说，你每花2块，长期平均只能拿回1块。<strong>亏1块。</strong></p>
+      </div>
+      <div class="panel" id="t4">
+        <p>你考虑两只股票：</p>
+        <p>A股：70%概率涨10%，30%概率跌5%。期望收益 = 7% − 1.5% = <strong>5.5%</strong></p>
+        <p>B股：50%概率涨30%，50%概率跌15%。期望收益 = 15% − 7.5% = <strong>7.5%</strong></p>
+        <p>B期望更高，但波动也更大。<strong>期望值帮你算"平均能赚多少"，但不告诉你"中途有多颠簸"。</strong></p>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- 1.2.4 方差 -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="title">方差 <span class="en">Variance</span></span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="card-preview"><div class="preview-inner">
+    <div class="tabs">
+      <span class="tab active" data-p="u1">📖 书里意思</span>
+      <span class="tab" data-p="u2">💬 人话解释</span>
+      <span class="tab" data-p="u3">🏠 生活例子</span>
+      <span class="tab" data-p="u4">📈 金融例子</span>
+    </div>
+    <div class="panels">
+      <div class="panel show" id="u1"><p>衡量结果波动有多大。期望值告诉你"平均是多少"，方差告诉你"离平均有多远"。</p></div>
+      <div class="panel" id="u2"><p><strong>方差大，说明结果忽高忽低，不稳定。方差小，说明结果比较集中，稳。</strong></p></div>
+      <div class="panel" id="u3">
+        <p>两个人月收入：</p>
+        <p>A：每月稳定1万。<br>B：有时赚5万，有时亏3万，平均也是1万。</p>
+        <p><strong>期望值一样，但B的方差大得多。你借钱给B，风险就大。</strong></p>
+      </div>
+      <div class="panel" id="u4">
+        <p>国债年化收益3%，方差几乎为0。<br>科技股年化收益期望10%，但方差极大，一年可能翻倍也可能腰斩。</p>
+        <p><strong>夏普比率（Sharpe Ratio）</strong>就是用"超额收益 ÷ 波动率"来衡量：你每承担一单位风险，能拿到多少收益。</p>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- 1.2.5 标准化形式 -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="title">标准化形式 <span class="en">Standardized Form</span></span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="card-preview"><div class="preview-inner">
+    <div class="tabs">
+      <span class="tab active" data-p="v1">📖 书里意思</span>
+      <span class="tab" data-p="v2">💬 人话解释</span>
+      <span class="tab" data-p="v3">🏠 生活例子</span>
+      <span class="tab" data-p="v4">📈 金融例子</span>
+    </div>
+    <div class="panels">
+      <div class="panel show" id="v1"><p>把不同均值、不同方差的随机变量，转换成统一的"标准形态"，方便比较和计算。</p></div>
+      <div class="panel" id="v2"><p><strong>标准化就是"把不同尺子上的刻度，换成同一把尺子"。</strong>比如考试A满分100，B满分150，直接比不公平；换算成标准分就能比了。</p></div>
+      <div class="panel" id="v3">
+        <p>你数学考了80分，全班平均70，标准差10。标准分 = (80−70)/10 = <strong>1</strong>。</p>
+        <p>你语文考了90分，全班平均85，标准差5。标准分 = (90−85)/5 = <strong>1</strong>。</p>
+        <p><strong>虽然分数不同，但你在两科里都是"高于平均一个标准差"，水平一样。</strong></p>
+      </div>
+      <div class="panel" id="v4">
+        <p><strong>Z-score（标准分）</strong>在金融里用来判断一个收益率是否"异常"。比如某基金本月涨了8%，同类基金平均涨2%，标准差3%。</p>
+        <div class="formula">Z = (8% − 2%) / 3% = 2</div>
+        <p>意味着它比平均高出2个标准差，属于统计上的"罕见事件"，可能值得关注。</p>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ================= 1.3 公平的打赌游戏和稳得获利 ================= -->
+<div class="section-title">1.3 公平的打赌游戏和稳得获利</div>
+
+<!-- 1.3.1 公平的打赌游戏 -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="title">公平的打赌游戏 <span class="en">Fair Game</span></span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="card-preview"><div class="preview-inner">
+    <div class="tabs">
+      <span class="tab active" data-p="w1">📖 书里意思</span>
+      <span class="tab" data-p="w2">💬 人话解释</span>
+      <span class="tab" data-p="w3">🏠 生活例子</span>
+      <span class="tab" data-p="w4">📈 金融例子</span>
+    </div>
+    <div class="panels">
+      <div class="panel show" id="w1"><p>期望收益为零的赌局。你赢的期望等于你输的期望，长期来看不赚不亏。</p></div>
+      <div class="panel" id="w2"><p><strong>公平就是：赔率刚好反映概率。</strong>比如抛硬币，正面概率1/2，赔率1赔1。你押1块，赢了拿1块，输了亏1块。<br>期望收益 = 1×0.5 − 1×0.5 = 0。</p></div>
+      <div class="panel" id="w3">
+        <p>你和朋友抛硬币，赌1块。<strong>这就是公平游戏。</strong></p>
+        <p>但赌场不会跟你玩公平游戏，赌场把赔率设成1赔0.9，你押1块赢了拿0.9，赌场就有了"优势"。</p>
+      </div>
+      <div class="panel" id="w4">
+        <p>在有效市场里，股票价格已经反映了所有信息，你买股票赚到的期望收益，刚好等于你承担的风险溢价。</p>
+        <p><strong>扣除交易成本和税费后，散户很难持续跑赢市场。</strong>这也是为什么指数基金长期表现优于大多数主动基金。</p>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- 1.3.2 + 1.3.3 获利与赛马 -->
+<div class="card">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="title">获利与赛马 <span class="en">Profit &amp; Horse Racing</span></span>
+    <span class="arrow">▼</span>
+  </div>
+  <div class="card-preview"><div class="preview-inner">
+    <div class="tabs">
+      <span class="tab active" data-p="x1">📖 书里意思</span>
+      <span class="tab" data-p="x2">💬 人话解释</span>
+      <span class="tab" data-p="x3">🏠 生活例子</span>
+      <span class="tab" data-p="x4">📈 金融例子</span>
+    </div>
+    <div class="panels">
+      <div class="panel show" id="x1"><p>赛马是作者用来演示"赔率、概率、期望值"关系的经典例子。马会给出的赔率，反映了市场对每匹马获胜概率的估计。</p></div>
+      <div class="panel" id="x2"><p><strong>赔率越高，说明市场认为这匹马赢的概率越低。</strong>如果你能准确判断真实概率，并且和赔率之间有偏差，你就能找到"价值投注"。</p></div>
+      <div class="panel" id="x3">
+        <p>一匹马赔率1赔10，说明市场认为它赢的概率约10%。<br>但你知道这匹马最近状态极好，真实胜率有30%。</p>
+        <div class="formula">期望收益 = 10 × 0.3 − 1 × 0.7 = 2.3 块</div>
+        <p><strong>期望为正，值得下注。</strong></p>
+      </div>
+      <div class="panel" id="x4">
+        <p><strong>价值投资</strong>的逻辑和赛马完全一样：市场给某只股票一个"赔率"（市盈率），你认为它的真实胜率（未来盈利概率）更高，于是买入。</p>
+        <p>巴菲特说的"别人恐惧我贪婪"，本质就是在赔率有利时下注。</p>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ================= 本章小结 ================= -->
+<div class="summary-card">
+  <h3>第1章小结：打赌游戏教会我们什么？</h3>
+  <p>这一章用橄榄球比赛和打赌游戏，把金融世界最底层的两件事讲透了：</p>
+  <p><strong>第一，不确定性是金融的起点。</strong>你不知道比赛谁赢，不知道股票明天涨还是跌。面对不确定性，人有两种应对方式：<strong>对冲</strong>（两边下注，锁定结果）和<strong>套利</strong>（发现价差，低买高卖）。</p>
+  <p><strong>第二，无套利假设是整个金融学的基石。</strong>一个正常的市场，不应该存在"白捡钱"的机会。因为一旦存在，所有人都会冲进去抢，抢着抢着差价就消失了。<strong>所以，所有金融产品的定价，都是从这个假设出发反推出来的。</strong></p>
+  <p><strong>第三，期望值和方差是衡量风险和收益的两把尺子。</strong>期望值告诉你"平均能赚多少"，方差告诉你"过程有多颠簸"。只看收益不看波动，就像只看彩票奖金不看中奖概率。</p>
+  <p><strong>第四，公平游戏不赚不亏，赌场永远有优势。</strong>市场长期来看接近公平游戏，但交易成本、税费、信息差，让散户处于劣势。</p>
+  <div class="key-point">💡 一句话总结：金融不教你预测未来，金融教你在不知道结果的情况下，怎么下注才不亏。</div>
+</div>
+
+<div class="footer">
+  简单有趣的金融数学 · 第1章互动陪读版<br>
+  交互：点概念展开 → 点标签切换视角 · 读完告诉我"行"，我再做第2章
+</div>
+
+<script>
+// 第一层：展开/收起概念卡
+function toggleCard(el) {
+  var card = el.closest ? el.closest('.card') : el;
+  card.classList.toggle('open');
+}
+
+// 第二层：标签切换内容（事件委托，支持动态）
+document.addEventListener('click', function(e) {
+  var tab = e.target.closest('.tab');
+  if (!tab) return;
+  var card = tab.closest('.card');
+  // 同组标签高亮
+  card.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  tab.classList.add('active');
+  // 同组面板切换
+  var pid = tab.getAttribute('data-p');
+  card.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('show'); });
+  var target = card.querySelector('#' + pid);
+  if (target) target.classList.add('show');
+});
+
+// 工具栏
+function expandAll() {
+  document.querySelectorAll('.card').forEach(function(c){ c.classList.add('open'); });
+}
+function collapseAll() {
+  document.querySelectorAll('.card').forEach(function(c){ c.classList.remove('open'); });
+}
+function resetAll() {
+  collapseAll();
+  document.querySelectorAll('.tab').forEach(function(t, i){
+    if (i % 4 === 0) t.classList.add('active'); else t.classList.remove('active');
+  });
+  document.querySelectorAll('.card').forEach(function(c){
+    var panels = c.querySelectorAll('.panel');
+    panels.forEach(function(p, j){ p.classList.toggle('show', j === 0); });
+  });
+}
+
+// 阅读进度条
+window.addEventListener('scroll', function() {
+  var h = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  var p = h > 0 ? (window.scrollY / h * 100) : 0;
+  document.getElementById('progressBar').style.width = p + '%';
+});
+</script>
+</body>
+</html>
